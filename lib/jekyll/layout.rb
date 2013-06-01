@@ -31,6 +31,7 @@ module Jekyll
 
       self.process(name)
       self.read_yaml(base, name)
+      transform   # convert the layout template before liquid
     end
 
     # Extract information from the layout filename.

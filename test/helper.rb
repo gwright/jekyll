@@ -60,3 +60,21 @@ class Test::Unit::TestCase
     $stdout = $old_stdout
   end
 end
+
+module Jekyll
+  class TestConverter < Converter
+    safe true
+
+    def matches(ext)
+      ext == ".x"
+    end
+
+    def output_ext(ext)
+      ".html"
+    end
+
+    def convert(content)
+      content.gsub(/XXX/,'')
+    end
+  end
+end

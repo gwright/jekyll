@@ -1,5 +1,6 @@
 require 'helper'
 
+
 class TestPage < Test::Unit::TestCase
   def setup_page(*args)
     dir, file = args
@@ -9,6 +10,10 @@ class TestPage < Test::Unit::TestCase
 
   def do_render(page)
     layouts = { "default" => Layout.new(@site, source_dir('_layouts'), "simple.html")}
+    page.render(layouts, {"site" => {"posts" => []}})
+  end
+
+  def do_render_with_layouts(page, layouts={})
     page.render(layouts, {"site" => {"posts" => []}})
   end
 
@@ -110,6 +115,56 @@ class TestPage < Test::Unit::TestCase
 
       should "layout of nil is respected" do
         assert_equal "nil", @page.data["layout"]
+      end
+    end
+
+    context "with layout converters" do
+      setup do
+        @page = setup_page('nested.html')
+      end
+
+      should "transform layout" do
+        layouts = {
+          "transform1" => Layout.new(@site, source_dir('_layouts'), "transform1.x"),
+          "transform2" => Layout.new(@site, source_dir('_layouts'), "transform2.x")
+        }
+        page = setup_page('transform1.html')
+        do_render_with_layouts(page, layouts)
+        page.write(dest_dir)
+        content = File.read(File.join(dest_dir, 'transform1.html'))
+
+        assert_equal "1transform1\n1\n", content, "transform layout failed"
+      end
+    end
+
+    context "with nested layout" do
+      setup do
+        @page = setup_page('nested.html')
+      end
+
+      should "wrap inner layout with outer layout" do
+        layouts = {
+          "inner" => Layout.new(@site, source_dir('_layouts'), "inner.html"),
+          "outer" => Layout.new(@site, source_dir('_layouts'), "outer.html")
+        }
+        do_render_with_layouts(@page, layouts)
+        @page.write(dest_dir)
+        content = File.read(File.join(dest_dir, 'nested.html'))
+
+        assert_equal "12nested\n2\n1\n", content, "nested layout failed"
+      end
+
+      should "transform nested layouts" do
+        layouts = {
+          "transform1" => Layout.new(@site, source_dir('_layouts'), "transform1.x"),
+          "transform2" => Layout.new(@site, source_dir('_layouts'), "transform2.x")
+        }
+        page = setup_page('transform2.html')
+        do_render_with_layouts(page, layouts)
+        page.write(dest_dir)
+        content = File.read(File.join(dest_dir, 'transform2.html'))
+
+        assert_equal "12transform2\n2\n1\n", content, "transform layout failed"
       end
     end
 
